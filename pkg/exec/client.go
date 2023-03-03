@@ -3,7 +3,6 @@ package exec
 import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"time"
 )
 
 // Clientset knows how to interact with a K8s cluster. It has a reference to
@@ -22,7 +21,6 @@ type ClientOpt struct {
 	Namespace     string
 
 	CurrentContext string
-	RequestTimeout time.Duration
 }
 
 // NewClient returns a new Clientset for the given config.

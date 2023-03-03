@@ -3,7 +3,8 @@ package exec
 import (
 	"context"
 	"fmt"
-	"github.com/google/martian/log"
+	"github.com/pingcap/log"
+	"go.uber.org/zap"
 	"io"
 	"k8s.io/apimachinery/pkg/util/httpstream/spdy"
 	spdy2 "k8s.io/client-go/transport/spdy"
@@ -25,15 +26,15 @@ var deniedCreateExecErr = fmt.Errorf("no permissions to create exec subresource"
 
 // ExecPod issues an exec request to execute the given command to a particular
 // pod.
-func (c *Client) ExecPod(command []string, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
-	log.Infof("sending exec request, command=%s, namespace=%S, pod=%s, container=%s", strings.Join(command, " "))
+func (c *Client) ExecPod(command []string, stdin io.Reader, stdout, stderr io.Writer, tty bool, timeout time.Duration) error {
+	log.Info("sending exec request, command=%s, namespace=%S, pod=%s, container=%s", zap.String("command", strings.Join(command, " ")), zap.String("namespace", c.Namespace), zap.String("pod", c.PodName), zap.String("container", c.ContainerName), zap.String("timeout", timeout.String()))
 
 	execRequest := c.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Namespace(c.Namespace).
 		Name(c.PodName).
 		SubResource("exec").
-		Timeout(c.RequestTimeout)
+		Timeout(timeout)
 
 	execRequest = execRequest.VersionedParams(&corev1.PodExecOptions{
 		Container: c.ContainerName,
@@ -77,7 +78,7 @@ func (c *Client) CanExec() error {
 		},
 	}
 
-	log.Infof("checking for exec permissions. namespace=%s, request-timeout=%s", c.Namespace, c.RequestTimeout.String())
+	log.Info("checking for exec permissions.", zap.String("namespace", c.Namespace))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -94,7 +95,7 @@ func (c *Client) CanExec() error {
 		return deniedCreateExecErr
 	}
 
-	log.Infof("confirmed exec permissions. namespace=%s, request-timeout=%s", c.Namespace, c.RequestTimeout.String())
+	log.Info("confirmed exec permissions.", zap.String("namespace", c.Namespace))
 	return nil
 }
 
