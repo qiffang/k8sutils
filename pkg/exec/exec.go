@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	authzv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +79,7 @@ func (c *Client) CanExec() error {
 
 	log.Infof("checking for exec permissions. namespace=%s, request-timeout=%s", c.Namespace, c.RequestTimeout.String())
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.RequestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	response, err := c.AuthorizationV1().SelfSubjectAccessReviews().Create(ctx, selfAccessReview, metav1.CreateOptions{})
